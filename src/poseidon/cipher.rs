@@ -1,8 +1,8 @@
 use crate::common::domain_strategy::DomainStrategy;
 // use crate::poseidon::params::PoseidonParams;
 use crate::poseidon::poseidon_round_function;
-use franklin_crypto::bellman::{Engine, Field};
 use crate::traits::HashParams;
+use franklin_crypto::bellman::{Engine, Field};
 
 // pub const MESSAGE_SIZE: usize = 2;
 // pub const CIPHER_SIZE: usize = MESSAGE_SIZE + 1;
@@ -83,7 +83,10 @@ impl<E: Engine, const RATE: usize, const WIDTH: usize> PoseidonCipher<E, RATE, W
         nonce: &E::Fr,
         domain_strategy: Option<DomainStrategy>,
     ) -> Vec<E::Fr> {
-        assert!(self.cipher.len() > RATE, "cipher length must be larger than RATE");
+        assert!(
+            self.cipher.len() > RATE,
+            "cipher length must be larger than RATE"
+        );
         let domain_strategy = domain_strategy.unwrap_or(DomainStrategy::CustomFixedLength);
         match domain_strategy {
             DomainStrategy::CustomFixedLength | DomainStrategy::FixedLength => (),

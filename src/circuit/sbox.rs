@@ -28,23 +28,15 @@ pub(crate) fn sbox<E: Engine, CS: ConstraintSystem<E>, const WIDTH: usize>(
     use_partial_state: Option<std::ops::Range<usize>>,
     custom_gate: CustomGate,
 ) -> Result<(), SynthesisError> {
-    let state_range = if let Some(partial_range) = use_partial_state{
+    let state_range = if let Some(partial_range) = use_partial_state {
         partial_range
-    }else{
+    } else {
         0..WIDTH
     };
 
     match power {
-        Sbox::Alpha(alpha) => sbox_alpha(
-            cs,
-            alpha,
-            prev_state,
-            state_range,
-            custom_gate,
-        ),
-        Sbox::AlphaInverse(alpha_inv) => {           
-            sbox_alpha_inv(cs, alpha_inv, prev_state, custom_gate)
-        }
+        Sbox::Alpha(alpha) => sbox_alpha(cs, alpha, prev_state, state_range, custom_gate),
+        Sbox::AlphaInverse(alpha_inv) => sbox_alpha_inv(cs, alpha_inv, prev_state, custom_gate),
     }
 }
 
@@ -260,7 +252,7 @@ mod test {
         println!(
             "{:?} takes {} gates with custom gate(width3) for {} iteration ",
             power,
-            cs.n()-end,
+            cs.n() - end,
             NUM_ROUNDS,
         );
         end = cs.n();

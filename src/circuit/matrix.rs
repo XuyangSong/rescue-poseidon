@@ -30,7 +30,7 @@ pub(crate) fn mul_by_sparse_matrix<E: Engine, const DIM: usize>(
     // we will assign result into input vector so set each to zero
     for lc in vector.iter_mut() {
         *lc = LinearCombination::zero();
-    }    
+    }
 
     for (a, b) in vec_cloned.iter().zip(matrix[0].iter()) {
         vector[0].add_assign_scaled(a, *b);

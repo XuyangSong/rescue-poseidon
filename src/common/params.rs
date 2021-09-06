@@ -18,7 +18,6 @@ pub struct InnerHashParameters<E: Engine, const RATE: usize, const WIDTH: usize>
     pub mds_matrix: [[E::Fr; WIDTH]; WIDTH],
 }
 
-
 type H = BlakeHasher;
 
 impl<E: Engine, const RATE: usize, const WIDTH: usize> InnerHashParameters<E, RATE, WIDTH> {
@@ -48,7 +47,7 @@ impl<E: Engine, const RATE: usize, const WIDTH: usize> InnerHashParameters<E, RA
     }
 
     pub(crate) fn compute_round_constants(&mut self, number_of_rounds: usize, tag: &[u8]) {
-        let total_round_constants = WIDTH * number_of_rounds; 
+        let total_round_constants = WIDTH * number_of_rounds;
 
         let mut round_constants = Vec::with_capacity(total_round_constants);
         let mut nonce = 0u32;

@@ -1,10 +1,10 @@
+use super::params::RescuePrimeParams;
 use crate::common::matrix::mmul_assign;
 use crate::common::sbox::sbox;
-use crate::sponge::{generic_hash};
+use crate::sponge::generic_hash;
 use crate::traits::{HashFamily, HashParams};
 use franklin_crypto::bellman::pairing::ff::Field;
 use franklin_crypto::bellman::pairing::Engine;
-use super::params::RescuePrimeParams;
 
 /// Receives inputs whose length `known` prior(fixed-length).
 /// Also uses custom domain strategy which basically sets value of capacity element to
@@ -18,7 +18,6 @@ pub fn rescue_prime_hash<E: Engine, const L: usize>(input: &[E::Fr; L]) -> [E::F
     let params = RescuePrimeParams::<E, RATE, WIDTH>::default();
     generic_hash(&params, input, None)
 }
-
 
 pub(crate) fn rescue_prime_round_function<
     E: Engine,

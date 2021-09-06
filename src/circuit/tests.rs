@@ -78,7 +78,8 @@ fn test_circuit_fixed_len_generic_hasher<
     let expected = GenericSponge::<_, RATE, WIDTH>::hash(&inputs, params, None);
 
     let actual =
-        CircuitGenericSponge::<_, RATE, WIDTH>::hash::<_, P>(cs, &inputs_as_num, &params, None).unwrap();
+        CircuitGenericSponge::<_, RATE, WIDTH>::hash::<_, P>(cs, &inputs_as_num, &params, None)
+            .unwrap();
     assert_eq!(actual[0].get_value().unwrap(), expected[0]);
 }
 
@@ -409,7 +410,14 @@ pub(crate) fn test_cipher_inputs<E: Engine, CS: ConstraintSystem<E>>(
     let nonce = E::Fr::rand(rng);
     let nonce_as_num = Num::Variable(AllocatedNum::alloc(cs, || Ok(nonce)).unwrap());
 
-    (inputs, inputs_as_num, secret, secret_as_num, nonce, nonce_as_num)
+    (
+        inputs,
+        inputs_as_num,
+        secret,
+        secret_as_num,
+        nonce,
+        nonce_as_num,
+    )
 }
 
 fn test_circuit_fixed_len_generic_cipher<
@@ -423,17 +431,26 @@ fn test_circuit_fixed_len_generic_cipher<
     cs: &mut CS,
     params: &P,
 ) {
-    use crate::poseidon::cipher::PoseidonCipher;
     use crate::circuit::poseidon::circuit_poseidon_encrypt;
+    use crate::poseidon::cipher::PoseidonCipher;
 
-    let (inputs, inputs_as_num, secret, secret_as_num, nonce, nonce_as_num) = test_cipher_inputs::<E, CS>(cs, input_len, true);
+    let (inputs, inputs_as_num, secret, secret_as_num, nonce, nonce_as_num) =
+        test_cipher_inputs::<E, CS>(cs, input_len, true);
 
-    let expected = PoseidonCipher::<E, RATE, WIDTH>::encrypt(params, &inputs, &secret, &nonce, None);
+    let expected =
+        PoseidonCipher::<E, RATE, WIDTH>::encrypt(params, &inputs, &secret, &nonce, None);
 
-    let actual = circuit_poseidon_encrypt::<_, _, _, RATE, WIDTH>(cs, params, None, &inputs_as_num, &secret_as_num, &nonce_as_num).unwrap();
+    let actual = circuit_poseidon_encrypt::<_, _, _, RATE, WIDTH>(
+        cs,
+        params,
+        None,
+        &inputs_as_num,
+        &secret_as_num,
+        &nonce_as_num,
+    )
+    .unwrap();
     assert_eq!(actual[0].get_value().unwrap(), expected.cipher[0]);
 }
-
 
 #[test]
 fn test_circuit_fixed_len_poseidon_cipher() {

@@ -135,7 +135,7 @@ pub(crate) fn transpose<E: Engine, const DIM: usize>(
 }
 
 // Computes inverse of 2-d or 3-d matrixes.
-// We need inverse of matrix for optimized poseidon 
+// We need inverse of matrix for optimized poseidon
 pub(crate) fn try_inverse<E: Engine, const DIM: usize>(
     m: &[[E::Fr; DIM]; DIM],
 ) -> Option<[[E::Fr; DIM]; DIM]> {

@@ -1,18 +1,20 @@
 use crate::poseidon::params::PoseidonParams;
 use crate::rescue::params::RescueParams;
+use crate::GenericSponge;
 use franklin_crypto::bellman::pairing::bn256::{Bn256, Fr};
-use franklin_crypto::bellman::{Field};
+use franklin_crypto::bellman::Field;
 use franklin_crypto::rescue::{bn256::Bn256RescueParams, RescueHashParams, StatefulRescue};
 use franklin_crypto::{
-    bellman::plonk::better_better_cs::cs::{TrivialAssembly, Width4MainGateWithDNext, PlonkCsWidth4WithNextStepParams},
+    bellman::plonk::better_better_cs::cs::{
+        PlonkCsWidth4WithNextStepParams, TrivialAssembly, Width4MainGateWithDNext,
+    },
     bellman::Engine,
-    plonk::circuit::{Width4WithCustomGates},
+    plonk::circuit::Width4WithCustomGates,
 };
 use poseidon_hash::StatefulSponge as PoseidonSponge;
 use poseidon_hash::{bn256::Bn256PoseidonParams, PoseidonHashParams};
 use rand::{Rand, SeedableRng, XorShiftRng};
 use std::convert::TryInto;
-use crate::GenericSponge;
 
 pub(crate) fn init_rng() -> XorShiftRng {
     XorShiftRng::from_seed(crate::common::TEST_SEED)
@@ -29,7 +31,7 @@ pub(crate) fn init_cs_no_custom_gate<E: Engine>(
 fn test_inputs<E: Engine, const L: usize>() -> [E::Fr; L] {
     let rng = &mut init_rng();
     let mut inputs = [E::Fr::zero(); L];
-    for inp in inputs.iter_mut(){
+    for inp in inputs.iter_mut() {
         *inp = E::Fr::rand(rng);
     }
 
@@ -40,13 +42,16 @@ fn test_inputs<E: Engine, const L: usize>() -> [E::Fr; L] {
 fn test_rescue_bn256_fixed_length() {
     const INPUT_LENGTH: usize = 2;
     let rng = &mut init_rng();
-    let input = (0..INPUT_LENGTH).map(|_| Fr::rand(rng)).collect::<Vec<Fr>>();
+    let input = (0..INPUT_LENGTH)
+        .map(|_| Fr::rand(rng))
+        .collect::<Vec<Fr>>();
 
     let old_params = Bn256RescueParams::new_checked_2_into_1();
     let expected = franklin_crypto::rescue::rescue_hash::<Bn256>(&old_params, &input);
 
-    let actual =
-        crate::rescue::rescue_hash::<Bn256, INPUT_LENGTH>(&input.try_into().expect("static vector"));
+    let actual = crate::rescue::rescue_hash::<Bn256, INPUT_LENGTH>(
+        &input.try_into().expect("static vector"),
+    );
     assert_eq!(expected[0], actual[0]);
 }
 
@@ -160,7 +165,7 @@ fn test_rescue_hash_var_len() {
 
     let new_params = RescueParams::<Bn256, RATE, WIDTH>::default();
     let mut hasher = GenericSponge::new();
-    hasher.absorb_multiple(&input,&new_params);
+    hasher.absorb_multiple(&input, &new_params);
     let mut actual = [Fr::zero(); 2];
     actual[0] = hasher.squeeze(&new_params).expect("an element");
     actual[1] = hasher.squeeze(&new_params).expect("an element");
@@ -168,39 +173,39 @@ fn test_rescue_hash_var_len() {
     assert_eq!(actual, expected);
 }
 
-
-
 #[test]
 fn test_new_generic_hasher_fixed_length_single_output_with_hardcoded_input() {
     use franklin_crypto::bellman::{PrimeField, PrimeFieldRepr};
     const LENGTH: usize = 3;
 
-    let i1 = hex::decode("29d8221459d2f65b3ff75fe514f17dce17b76735fb60d834ee07faa88894590d").unwrap();
-    let i2 = hex::decode("009d3ac090220e3539f4cdcaf48f246aecb8b340bffa751fe47ed70576a3bbc2").unwrap();
-    let i3 = hex::decode("0000000000000000000000000000000000000000000000000000000000000090").unwrap();
+    let i1 =
+        hex::decode("29d8221459d2f65b3ff75fe514f17dce17b76735fb60d834ee07faa88894590d").unwrap();
+    let i2 =
+        hex::decode("009d3ac090220e3539f4cdcaf48f246aecb8b340bffa751fe47ed70576a3bbc2").unwrap();
+    let i3 =
+        hex::decode("0000000000000000000000000000000000000000000000000000000000000090").unwrap();
 
     let mut el1_repr = <Fr as PrimeField>::Repr::default();
     el1_repr.read_be(&i1[..]).unwrap();
     let el1 = Fr::from_repr(el1_repr).unwrap();
-    
+
     let mut el2_repr = <Fr as PrimeField>::Repr::default();
     el2_repr.read_be(&i2[..]).unwrap();
     let el2 = Fr::from_repr(el2_repr).unwrap();
-    
+
     let mut el3_repr = <Fr as PrimeField>::Repr::default();
     el3_repr.read_be(&i3[..]).unwrap();
     let el3 = Fr::from_repr(el3_repr).unwrap();
 
     let input = [el1, el2, el3];
-    
 
     let params = RescueParams::<Bn256, 2, 3>::default();
 
-    let mut original_params  = Bn256RescueParams::new_checked_2_into_1();
+    let mut original_params = Bn256RescueParams::new_checked_2_into_1();
     original_params.set_allow_custom_gate(true);
 
     let original = franklin_crypto::rescue::rescue_hash::<Bn256>(&original_params, &input);
-    
+
     let expected = crate::rescue::rescue_hash::<Bn256, LENGTH>(&input);
 
     let actual = GenericSponge::<_, 2, 3>::hash(&input, &params, None);
@@ -234,19 +239,21 @@ fn test_var_length_multiple_absorbs_without_padding_when_pad_needed() {
     generic_hasher.absorb_multiple(&input[4..6], &new_params);
     generic_hasher.absorb_multiple(&input[6..], &new_params);
 
-    let actual = generic_hasher.squeeze(&new_params).expect("a squeezed elem");
+    let actual = generic_hasher
+        .squeeze(&new_params)
+        .expect("a squeezed elem");
 
     assert_eq!(actual, expected);
 }
 
 #[test]
-#[should_panic(expected="padding was necessary!")]
+#[should_panic(expected = "padding was necessary!")]
 fn test_var_length_single_absorb_without_padding_when_pad_needed() {
     const WIDTH: usize = 3;
     const RATE: usize = 2;
     const LENGTH: usize = 1;
 
-    let input = test_inputs::<Bn256, LENGTH>();    
+    let input = test_inputs::<Bn256, LENGTH>();
 
     let new_params = RescueParams::<Bn256, RATE, WIDTH>::default();
     let mut generic_hasher = GenericSponge::new();
@@ -287,7 +294,9 @@ fn test_multiple_absorb_steps() {
     generic_hasher.absorb_multiple(&input[6..], &new_params);
     generic_hasher.pad_if_necessary();
 
-    let actual = generic_hasher.squeeze(&new_params).expect("a squeezed elem");
+    let actual = generic_hasher
+        .squeeze(&new_params)
+        .expect("a squeezed elem");
 
     assert_eq!(actual, expected);
 }
@@ -295,7 +304,7 @@ fn test_multiple_absorb_steps() {
 fn test_new_generic_hasher_single_absorb_compare_with_old_rescue_sponge() {
     const WIDTH: usize = 3;
     const RATE: usize = 2;
-    const LENGTH: usize =1;
+    const LENGTH: usize = 1;
 
     let input = test_inputs::<Bn256, LENGTH>();
 
@@ -304,7 +313,7 @@ fn test_new_generic_hasher_single_absorb_compare_with_old_rescue_sponge() {
     let mut original_rescue = StatefulRescue::<Bn256>::new(&original_params);
     original_rescue.absorb_single_value(input[0]);
     original_rescue.pad_if_necessary();
-    
+
     let expected = original_rescue.squeeze_out_single();
 
     let new_params = RescueParams::<Bn256, RATE, WIDTH>::default();
@@ -312,8 +321,9 @@ fn test_new_generic_hasher_single_absorb_compare_with_old_rescue_sponge() {
     generic_hasher.absorb(input[0], &new_params);
     generic_hasher.pad_if_necessary();
 
-
-    let actual = generic_hasher.squeeze(&new_params).expect("a squeezed elem");
+    let actual = generic_hasher
+        .squeeze(&new_params)
+        .expect("a squeezed elem");
 
     assert_eq!(actual, expected);
 }
@@ -339,7 +349,7 @@ fn test_multiple_squeeze() {
     let original_params = Bn256RescueParams::new_checked_2_into_1();
 
     let mut original_rescue = StatefulRescue::<Bn256>::new(&original_params);
-    original_rescue.absorb(&input);        
+    original_rescue.absorb(&input);
     let mut expected = [Fr::zero(); RATE];
     expected[0] = original_rescue.squeeze_out_single();
     expected[1] = original_rescue.squeeze_out_single();
@@ -348,8 +358,12 @@ fn test_multiple_squeeze() {
     let mut generic_hasher = GenericSponge::new();
     generic_hasher.absorb_multiple(&input, &new_params);
     let mut actual = [Fr::zero(); RATE];
-    actual[0] = generic_hasher.squeeze(&new_params).expect("a squeezed elem");
-    actual[1] = generic_hasher.squeeze(&new_params).expect("a squeezed elem");
+    actual[0] = generic_hasher
+        .squeeze(&new_params)
+        .expect("a squeezed elem");
+    actual[1] = generic_hasher
+        .squeeze(&new_params)
+        .expect("a squeezed elem");
 
     assert_eq!(expected, actual);
 }
@@ -357,7 +371,7 @@ fn test_multiple_squeeze() {
 #[test]
 fn test_excessive_multiple_squeeze() {
     const WIDTH: usize = 3;
-    const RATE: usize = 2;        
+    const RATE: usize = 2;
     const ILENGTH: usize = 2;
 
     let input = test_inputs::<Bn256, ILENGTH>();
@@ -370,7 +384,6 @@ fn test_excessive_multiple_squeeze() {
     let _ = generic_hasher.squeeze(&params).expect("a squeezed elem");
     let _ = generic_hasher.squeeze(&params).expect("a squeezed elem");
     let _ = generic_hasher.squeeze(&params).is_none();
-
 }
 #[test]
 fn test_rate_absorb_and_squeeze() {
@@ -384,17 +397,18 @@ fn test_rate_absorb_and_squeeze() {
 
     let mut original_rescue = StatefulRescue::<Bn256>::new(&original_params);
     original_rescue.absorb(&input);
-    
+
     let expected = original_rescue.squeeze_out_single();
 
     let new_params = RescueParams::<Bn256, RATE, WIDTH>::default();
     let mut generic_hasher = GenericSponge::new();
     generic_hasher.absorb_multiple(&input, &new_params);
 
-    let actual = generic_hasher.squeeze(&new_params).expect("a squeezed elem");
+    let actual = generic_hasher
+        .squeeze(&new_params)
+        .expect("a squeezed elem");
 
     assert_eq!(actual, expected);
-
 }
 
 #[test]
@@ -409,7 +423,9 @@ fn poseidon_cipher() {
     let params = PoseidonParams::<Bn256, RATE, WIDTH>::default();
     {
         let message_2 = test_inputs::<Bn256, 2>().to_vec();
-        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(&params, &message_2, &secret, &nonce, None);
+        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(
+            &params, &message_2, &secret, &nonce, None,
+        );
         let decrypt = cipher.decrypt(&params, &secret, &nonce, None);
 
         assert_eq!(message_2, decrypt);
@@ -417,7 +433,9 @@ fn poseidon_cipher() {
 
     {
         let mut message_3 = test_inputs::<Bn256, 3>().to_vec();
-        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(&params, &message_3, &secret, &nonce, None);
+        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(
+            &params, &message_3, &secret, &nonce, None,
+        );
         let decrypt = cipher.decrypt(&params, &secret, &nonce, None);
 
         // Padding
@@ -427,10 +445,11 @@ fn poseidon_cipher() {
 
     {
         let message_4 = test_inputs::<Bn256, 4>().to_vec();
-        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(&params, &message_4, &secret, &nonce, None);
+        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(
+            &params, &message_4, &secret, &nonce, None,
+        );
         let decrypt = cipher.decrypt(&params, &secret, &nonce, None);
 
         assert_eq!(message_4, decrypt);
     }
-
 }

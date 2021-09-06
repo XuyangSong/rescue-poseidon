@@ -69,7 +69,7 @@ impl DomainStrategy {
     pub(crate) fn generate_padding_values<E: Engine>(
         &self,
         input_len: usize,
-        rate: usize
+        rate: usize,
     ) -> Vec<E::Fr> {
         assert!(input_len != 0, "empty input");
         if input_len % rate == 0 {

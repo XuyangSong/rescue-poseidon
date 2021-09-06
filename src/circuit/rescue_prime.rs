@@ -1,8 +1,8 @@
+use super::matrix::matrix_vector_product;
 use super::sbox::*;
 use super::sponge::circuit_generic_hash_num;
-use super::matrix::matrix_vector_product;
-use crate::{DomainStrategy, rescue_prime::params::RescuePrimeParams};
 use crate::traits::{HashFamily, HashParams};
+use crate::{rescue_prime::params::RescuePrimeParams, DomainStrategy};
 use franklin_crypto::bellman::plonk::better_better_cs::cs::ConstraintSystem;
 use franklin_crypto::bellman::SynthesisError;
 use franklin_crypto::{
@@ -47,13 +47,7 @@ pub(crate) fn gadget_rescue_prime_round_function<
         // apply sbox
         // each lc will have 3 terms but there will be 1 in first iteration
         // total cost 2 gate per state vars = 6
-        sbox(
-            cs,
-            params.alpha(),
-            state,
-            None,
-            params.custom_gate(),
-        )?;
+        sbox(cs, params.alpha(), state, None, params.custom_gate())?;
 
         // mul by mds
         matrix_vector_product(&params.mds_matrix(), state)?;
@@ -64,13 +58,7 @@ pub(crate) fn gadget_rescue_prime_round_function<
             s.add_assign_constant(c);
         }
         // apply inverse sbox
-        sbox(
-            cs,
-            params.alpha_inv(),
-            state,
-            None,
-            params.custom_gate(),
-        )?;
+        sbox(cs, params.alpha_inv(), state, None, params.custom_gate())?;
 
         // mul by mds
         matrix_vector_product(&params.mds_matrix(), state)?;

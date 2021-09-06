@@ -1,9 +1,8 @@
-use franklin_crypto::bellman::{Engine};
+use franklin_crypto::bellman::Engine;
 
 use crate::common::params::InnerHashParameters;
-use crate::traits::{HashParams, HashFamily, Sbox, CustomGate};
+use crate::traits::{CustomGate, HashFamily, HashParams, Sbox};
 use std::convert::TryInto;
-
 
 #[derive(Clone, Debug)]
 pub struct RescueParams<E: Engine, const RATE: usize, const WIDTH: usize> {
@@ -15,15 +14,13 @@ pub struct RescueParams<E: Engine, const RATE: usize, const WIDTH: usize> {
     pub(crate) custom_gate: CustomGate,
 }
 
-impl<E: Engine, const RATE: usize, const WIDTH: usize> PartialEq for RescueParams<E, RATE, WIDTH>{
+impl<E: Engine, const RATE: usize, const WIDTH: usize> PartialEq for RescueParams<E, RATE, WIDTH> {
     fn eq(&self, other: &Self) -> bool {
         self.hash_family() == other.hash_family()
     }
 }
 
-impl<E: Engine, const RATE: usize, const WIDTH: usize> Default
-    for RescueParams<E, RATE, WIDTH>
-{
+impl<E: Engine, const RATE: usize, const WIDTH: usize> Default for RescueParams<E, RATE, WIDTH> {
     fn default() -> Self {
         let (params, alpha, alpha_inv) = compute_params::<E, RATE, WIDTH, 4>();
         Self {
@@ -39,7 +36,6 @@ impl<E: Engine, const RATE: usize, const WIDTH: usize> Default
         }
     }
 }
-
 
 impl<E: Engine, const RATE: usize, const WIDTH: usize> HashParams<E, RATE, WIDTH>
     for RescueParams<E, RATE, WIDTH>
@@ -72,7 +68,7 @@ impl<E: Engine, const RATE: usize, const WIDTH: usize> HashParams<E, RATE, WIDTH
         &self.alpha_inv
     }
 
-    fn optimized_mds_matrixes(&self) -> (&[[E::Fr; WIDTH]; WIDTH], &[[[E::Fr; WIDTH];WIDTH]]) {
+    fn optimized_mds_matrixes(&self) -> (&[[E::Fr; WIDTH]; WIDTH], &[[[E::Fr; WIDTH]; WIDTH]]) {
         unimplemented!("Rescue doesn't use optimized matrixes")
     }
 
@@ -83,28 +79,24 @@ impl<E: Engine, const RATE: usize, const WIDTH: usize> HashParams<E, RATE, WIDTH
     fn custom_gate(&self) -> CustomGate {
         self.custom_gate
     }
-    
+
     fn use_custom_gate(&mut self, custom_gate: CustomGate) {
-        self.custom_gate = custom_gate;    
+        self.custom_gate = custom_gate;
     }
 }
 
-
-pub(crate) fn compute_params<E: Engine, const RATE: usize, const WIDTH: usize, const N: usize>() -> (InnerHashParameters<E, RATE, WIDTH>, u64, [u64; N]) {
+pub(crate) fn compute_params<E: Engine, const RATE: usize, const WIDTH: usize, const N: usize>(
+) -> (InnerHashParameters<E, RATE, WIDTH>, u64, [u64; N]) {
     // let full_rounds = 22;
     let full_rounds = 8;
     let security_level = 126;
 
-    let mut params = InnerHashParameters::new(        
-        security_level,
-        full_rounds,
-        0,
-    );
+    let mut params = InnerHashParameters::new(security_level, full_rounds, 0);
 
     let rounds_tag = b"Rescue_f";
     let _mds_tag = b"ResM0003";
-    let total_number_of_rounds = 2*full_rounds + 1;
-    
+    let total_number_of_rounds = 2 * full_rounds + 1;
+
     params.compute_round_constants(total_number_of_rounds, rounds_tag);
     params.compute_mds_matrix_for_rescue();
 
@@ -113,5 +105,3 @@ pub(crate) fn compute_params<E: Engine, const RATE: usize, const WIDTH: usize, c
 
     (params, alpha, alpha_inv)
 }
-
-

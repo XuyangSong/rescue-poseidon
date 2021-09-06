@@ -100,8 +100,10 @@ impl<'a, E: Engine, const RATE: usize, const WIDTH: usize> GenericSponge<E, RATE
     }
 
     pub fn absorb_multiple<P: HashParams<E, RATE, WIDTH>>(&mut self, input: &[E::Fr], params: &P) {
-        // compute padding values        
-        let padding_values = self.domain_strategy.generate_padding_values::<E>(input.len(), RATE);
+        // compute padding values
+        let padding_values = self
+            .domain_strategy
+            .generate_padding_values::<E>(input.len(), RATE);
 
         for inp in input.iter().chain(padding_values.iter()) {
             self.absorb(*inp, params)
@@ -148,9 +150,10 @@ impl<'a, E: Engine, const RATE: usize, const WIDTH: usize> GenericSponge<E, RATE
         match self.mode {
             SpongeMode::Absorb(ref mut buf) => {
                 let unwrapped_buffer_len = buf.iter().filter(|el| el.is_some()).count();
-                // compute padding values                
-                let padding_values =
-                    self.domain_strategy.generate_padding_values::<E>(unwrapped_buffer_len, RATE);
+                // compute padding values
+                let padding_values = self
+                    .domain_strategy
+                    .generate_padding_values::<E>(unwrapped_buffer_len, RATE);
                 let mut padding_values_it = padding_values.iter().cloned();
 
                 for b in buf {

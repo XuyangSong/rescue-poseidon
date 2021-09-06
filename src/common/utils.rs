@@ -164,19 +164,18 @@ pub(crate) fn compute_gcd<E: Engine, const N: usize>(n: u64) -> Option<[u64; N]>
 
     p_minus_one_biguint -= BigUint::one();
 
-
-
     let alpha_signed = BigInt::from(n_big);
     let p_minus_one_signed = BigInt::from(p_minus_one_biguint);
 
-    let ExtendedGcd { gcd, x: _, mut y, .. } = p_minus_one_signed.extended_gcd(&alpha_signed);
+    let ExtendedGcd {
+        gcd, x: _, mut y, ..
+    } = p_minus_one_signed.extended_gcd(&alpha_signed);
     assert!(gcd.is_one());
     if y < BigInt::zero() {
         y += p_minus_one_signed;
-        
     }
 
-    match y.to_biguint(){
+    match y.to_biguint() {
         Some(value) => return Some(biguint_to_u64_array(value)),
         _ => return None,
     }
@@ -193,4 +192,3 @@ pub(crate) fn biguint_to_u64_array<const N: usize>(mut v: BigUint) -> [u64; N] {
     assert!(v.is_zero());
     ret
 }
-

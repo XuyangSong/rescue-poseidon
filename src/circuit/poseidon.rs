@@ -1,8 +1,8 @@
+use super::matrix::{matrix_vector_product, mul_by_sparse_matrix};
 use super::sbox::sbox;
 use super::sponge::circuit_generic_hash_num;
-use super::matrix::{matrix_vector_product, mul_by_sparse_matrix};
-use crate::{DomainStrategy, poseidon::params::PoseidonParams};
 use crate::traits::{HashFamily, HashParams};
+use crate::{poseidon::params::PoseidonParams, DomainStrategy};
 use franklin_crypto::bellman::plonk::better_better_cs::cs::ConstraintSystem;
 use franklin_crypto::bellman::{Field, SynthesisError};
 use franklin_crypto::{
@@ -172,10 +172,10 @@ pub(crate) fn circuit_poseidon_encrypt<
 
     // Init state
     let mut state: [LinearCombination<E>; WIDTH] = (0..WIDTH)
-            .map(|_| LinearCombination::zero())
-            .collect::<Vec<LinearCombination<E>>>()
-            .try_into()
-            .expect("constant array of LCs");
+        .map(|_| LinearCombination::zero())
+        .collect::<Vec<LinearCombination<E>>>()
+        .try_into()
+        .expect("constant array of LCs");
 
     // Specialize capacity
     let capacity_value = domain_strategy

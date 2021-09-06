@@ -1,6 +1,10 @@
-use super::sbox::sbox;
 use super::matrix::matrix_vector_product;
-use crate::{DomainStrategy, circuit::sponge::circuit_generic_hash_num, traits::{HashFamily, HashParams}};
+use super::sbox::sbox;
+use crate::{
+    circuit::sponge::circuit_generic_hash_num,
+    traits::{HashFamily, HashParams},
+    DomainStrategy,
+};
 use franklin_crypto::bellman::plonk::better_better_cs::cs::ConstraintSystem;
 
 use crate::rescue::params::RescueParams;
@@ -50,21 +54,9 @@ pub(crate) fn circuit_rescue_round_function<
     for round in 0..2 * params.number_of_full_rounds() {
         // apply sbox
         if round & 1 == 0 {
-            sbox(
-                cs,
-                params.alpha_inv(),
-                state,
-                None,
-                params.custom_gate(),
-            )?;
+            sbox(cs, params.alpha_inv(), state, None, params.custom_gate())?;
         } else {
-            sbox(
-                cs,
-                params.alpha(),
-                state,
-                None,
-                params.custom_gate(),
-            )?;
+            sbox(cs, params.alpha(), state, None, params.custom_gate())?;
         }
         // mds row
         matrix_vector_product(&params.mds_matrix(), state)?;

@@ -1,8 +1,8 @@
-use crate::common::{matrix::mmul_assign, sbox::{sbox}};
-use crate::sponge::{generic_hash};
+use super::params::RescueParams;
+use crate::common::{matrix::mmul_assign, sbox::sbox};
+use crate::sponge::generic_hash;
 use crate::traits::{HashFamily, HashParams};
 use franklin_crypto::bellman::{Engine, Field};
-use super::params::RescueParams;
 
 /// Receives inputs whose length `known` prior(fixed-length).
 /// Also uses custom domain strategy which basically sets value of capacity element to
@@ -26,7 +26,11 @@ pub(crate) fn rescue_round_function<
     state: &mut [E::Fr; WIDTH],
     _input: Option<[E::Fr; RATE]>,
 ) {
-    assert_eq!(params.hash_family(), HashFamily::Rescue, "Incorrect hash family!");
+    assert_eq!(
+        params.hash_family(),
+        HashFamily::Rescue,
+        "Incorrect hash family!"
+    );
 
     // round constants for first step
     state

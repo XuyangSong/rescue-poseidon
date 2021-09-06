@@ -144,7 +144,7 @@ impl<'a, E: Engine, const RATE: usize, const WIDTH: usize> CircuitGenericSponge<
         cs: &mut CS,
         input: &[Num<E>],
         params: &P,
-        domain_strategy: Option<DomainStrategy>
+        domain_strategy: Option<DomainStrategy>,
     ) -> Result<[Num<E>; RATE], SynthesisError> {
         let result = Self::hash(cs, input, params, domain_strategy)?;
         // prepare output
@@ -365,7 +365,11 @@ pub fn circuit_generic_round_function_conditional<
         *s = lc.clone().into_num(cs)?;
     }
 
-    for ((old, new), lc) in old_state_nums.iter().zip(new_state_nums.iter()).zip(state.iter_mut()) {
+    for ((old, new), lc) in old_state_nums
+        .iter()
+        .zip(new_state_nums.iter())
+        .zip(state.iter_mut())
+    {
         let selected = Num::conditionally_select(cs, execute, &new, &old)?;
         *lc = LinearCombination::from(selected);
     }

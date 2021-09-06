@@ -1,8 +1,8 @@
+use super::params::PoseidonParams;
 use crate::common::{matrix::mmul_assign, sbox::sbox};
-use crate::sponge::{generic_hash};
+use crate::sponge::generic_hash;
 use crate::traits::{HashFamily, HashParams};
 use franklin_crypto::bellman::{Engine, Field};
-use super::params::PoseidonParams;
 
 /// Receives inputs whose length `known` prior(fixed-length).
 /// Also uses custom domain strategy which basically sets value of capacity element to
@@ -26,7 +26,11 @@ pub(crate) fn poseidon_round_function<
     state: &mut [E::Fr; WIDTH],
     _input: Option<[E::Fr; RATE]>,
 ) {
-    assert_eq!(params.hash_family(), HashFamily::Poseidon, "Incorrect hash family!");
+    assert_eq!(
+        params.hash_family(),
+        HashFamily::Poseidon,
+        "Incorrect hash family!"
+    );
     debug_assert!(params.number_of_full_rounds() & 1 == 0);
     let half_of_full_rounds = params.number_of_full_rounds() / 2;
 
