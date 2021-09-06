@@ -383,3 +383,132 @@ fn test_circuit_var_len_rescue_prime_hasher() {
         assert!(cs.is_satisfied());
     }
 }
+
+pub(crate) fn test_cipher_inputs<E: Engine, CS: ConstraintSystem<E>>(
+    cs: &mut CS,
+    input_size: usize,
+    use_allocated: bool,
+) -> (Vec<E::Fr>, Vec<Num<E>>, E::Fr, Num<E>, E::Fr, Num<E>) {
+    let rng = &mut init_rng();
+
+    let mut inputs = vec![];
+    let mut inputs_as_num = vec![];
+    for _ in 0..input_size {
+        let element = E::Fr::rand(rng);
+        inputs.push(element.clone());
+        let num = if use_allocated {
+            Num::Variable(AllocatedNum::alloc(cs, || Ok(element)).unwrap())
+        } else {
+            Num::Constant(element)
+        };
+        inputs_as_num.push(num);
+    }
+
+    let secret = E::Fr::rand(rng);
+    let secret_as_num = Num::Variable(AllocatedNum::alloc(cs, || Ok(secret)).unwrap());
+    let nonce = E::Fr::rand(rng);
+    let nonce_as_num = Num::Variable(AllocatedNum::alloc(cs, || Ok(nonce)).unwrap());
+
+    (inputs, inputs_as_num, secret, secret_as_num, nonce, nonce_as_num)
+}
+
+fn test_circuit_fixed_len_generic_cipher<
+    E: Engine,
+    CS: ConstraintSystem<E>,
+    P: HashParams<E, RATE, WIDTH>,
+    const RATE: usize,
+    const WIDTH: usize,
+>(
+    input_len: usize,
+    cs: &mut CS,
+    params: &P,
+) {
+    use crate::poseidon::cipher::PoseidonCipher;
+    use crate::circuit::poseidon::circuit_poseidon_encrypt;
+
+    let (inputs, inputs_as_num, secret, secret_as_num, nonce, nonce_as_num) = test_cipher_inputs::<E, CS>(cs, input_len, true);
+
+    let expected = PoseidonCipher::<E, RATE, WIDTH>::encrypt(params, &inputs, &secret, &nonce, None);
+
+    let actual = circuit_poseidon_encrypt::<_, _, _, RATE, WIDTH>(cs, params, None, &inputs_as_num, &secret_as_num, &nonce_as_num).unwrap();
+    assert_eq!(actual[0].get_value().unwrap(), expected.cipher[0]);
+}
+
+
+#[test]
+fn test_circuit_fixed_len_poseidon_cipher() {
+    const WIDTH: usize = 3;
+    const RATE: usize = 2;
+
+    {
+        // no custom gate
+        let cs = &mut init_cs::<Bn256>();
+        let params = PoseidonParams::default();
+        test_circuit_fixed_len_generic_cipher::<_, _, _, RATE, WIDTH>(2, cs, &params);
+        println!(
+            "CS cost of constant length Poseidon hash with 2 input(no custom gate): {}",
+            cs.n()
+        );
+
+        cs.finalize();
+        assert!(cs.is_satisfied());
+    }
+    {
+        // custom gate with state width 3
+        let cs = &mut init_cs::<Bn256>();
+        let mut params = PoseidonParams::default();
+        params.use_custom_gate(CustomGate::QuinticWidth3);
+        test_circuit_fixed_len_generic_cipher::<_, _, _, RATE, WIDTH>(2, cs, &params);
+        println!(
+            "CS cost of constant length Poseidon hash with 2 input(custom gate width 3): {}",
+            cs.n()
+        );
+
+        cs.finalize();
+        assert!(cs.is_satisfied());
+    }
+    {
+        // custom gate with state width 4
+        let cs = &mut init_cs::<Bn256>();
+        let mut params = PoseidonParams::default();
+        params.use_custom_gate(CustomGate::QuinticWidth4);
+        test_circuit_fixed_len_generic_cipher::<_, _, _, RATE, WIDTH>(2, cs, &params);
+        println!(
+            "CS cost of constant length Poseidon hash with 2 input(custom gate width 4): {}",
+            cs.n()
+        );
+
+        cs.finalize();
+        assert!(cs.is_satisfied());
+    }
+
+    {
+        // custom gate with state width 4
+        let cs = &mut init_cs::<Bn256>();
+        let mut params = PoseidonParams::default();
+        params.use_custom_gate(CustomGate::QuinticWidth4);
+        test_circuit_fixed_len_generic_cipher::<_, _, _, RATE, WIDTH>(3, cs, &params);
+        println!(
+            "CS cost of constant length Poseidon hash with 2 input(custom gate width 4): {}",
+            cs.n()
+        );
+
+        cs.finalize();
+        assert!(cs.is_satisfied());
+    }
+
+    {
+        // custom gate with state width 4
+        let cs = &mut init_cs::<Bn256>();
+        let mut params = PoseidonParams::default();
+        params.use_custom_gate(CustomGate::QuinticWidth4);
+        test_circuit_fixed_len_generic_cipher::<_, _, _, RATE, WIDTH>(4, cs, &params);
+        println!(
+            "CS cost of constant length Poseidon hash with 2 input(custom gate width 4): {}",
+            cs.n()
+        );
+
+        cs.finalize();
+        assert!(cs.is_satisfied());
+    }
+}

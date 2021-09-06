@@ -396,3 +396,41 @@ fn test_rate_absorb_and_squeeze() {
     assert_eq!(actual, expected);
 
 }
+
+#[test]
+fn poseidon_cipher() {
+    use crate::poseidon::cipher::PoseidonCipher;
+    const WIDTH: usize = 3;
+    const RATE: usize = 2;
+
+    let rng = &mut init_rng();
+    let secret = Fr::rand(rng);
+    let nonce = Fr::rand(rng);
+    let params = PoseidonParams::<Bn256, RATE, WIDTH>::default();
+    {
+        let message_2 = test_inputs::<Bn256, 2>().to_vec();
+        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(&params, &message_2, &secret, &nonce, None);
+        let decrypt = cipher.decrypt(&params, &secret, &nonce, None);
+
+        assert_eq!(message_2, decrypt);
+    }
+
+    {
+        let mut message_3 = test_inputs::<Bn256, 3>().to_vec();
+        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(&params, &message_3, &secret, &nonce, None);
+        let decrypt = cipher.decrypt(&params, &secret, &nonce, None);
+
+        // Padding
+        message_3.push(Fr::one());
+        assert_eq!(message_3, decrypt);
+    }
+
+    {
+        let message_4 = test_inputs::<Bn256, 4>().to_vec();
+        let cipher = PoseidonCipher::<Bn256, RATE, WIDTH>::encrypt(&params, &message_4, &secret, &nonce, None);
+        let decrypt = cipher.decrypt(&params, &secret, &nonce, None);
+
+        assert_eq!(message_4, decrypt);
+    }
+
+}

@@ -9,6 +9,7 @@ use franklin_crypto::{
     bellman::Engine,
     plonk::circuit::{allocated_num::Num, linear_combination::LinearCombination},
 };
+use std::convert::TryInto;
 
 /// Receives inputs whose length `known` prior(fixed-length).
 /// Also uses custom domain strategy which basically sets value of capacity element to
@@ -133,4 +134,70 @@ pub(crate) fn circuit_poseidon_round_function<
     }
 
     Ok(())
+}
+
+pub(crate) fn circuit_poseidon_encrypt<
+    E: Engine,
+    CS: ConstraintSystem<E>,
+    P: HashParams<E, RATE, WIDTH>,
+    const RATE: usize,
+    const WIDTH: usize,
+>(
+    cs: &mut CS,
+    params: &P,
+    domain_strategy: Option<DomainStrategy>,
+    input: &Vec<Num<E>>,
+    secret: &Num<E>,
+    nonce: &Num<E>,
+) -> Result<Vec<LinearCombination<E>>, SynthesisError> {
+    let domain_strategy = domain_strategy.unwrap_or(DomainStrategy::CustomFixedLength);
+    match domain_strategy {
+        DomainStrategy::CustomFixedLength | DomainStrategy::FixedLength => (),
+        _ => panic!("only fixed length domain strategies allowed"),
+    }
+
+    // Compute padding values
+    let padding_values = domain_strategy
+        .generate_padding_values::<E>(input.len(), RATE)
+        .iter()
+        .map(|el| Num::Constant(*el))
+        .collect::<Vec<Num<E>>>();
+
+    // Chain all values
+    let mut padded_input = vec![];
+    padded_input.extend_from_slice(input);
+    padded_input.extend_from_slice(&padding_values);
+
+    assert!(padded_input.len() % RATE == 0);
+
+    // Init state
+    let mut state: [LinearCombination<E>; WIDTH] = (0..WIDTH)
+            .map(|_| LinearCombination::zero())
+            .collect::<Vec<LinearCombination<E>>>()
+            .try_into()
+            .expect("constant array of LCs");
+
+    // Specialize capacity
+    let capacity_value = domain_strategy
+        .compute_capacity::<E>(padded_input.len(), RATE)
+        .unwrap_or(E::Fr::zero());
+    state[0].add_assign_constant(capacity_value);
+    state[1].add_assign_number_with_coeff(secret, E::Fr::one());
+    state[2].add_assign_number_with_coeff(nonce, E::Fr::one());
+
+    // Prepare output
+    let mut output = Vec::with_capacity(padded_input.len() + 1);
+    for values in padded_input.chunks_exact(RATE) {
+        circuit_poseidon_round_function(cs, params, &mut state)?;
+        for (v, s) in values.iter().zip(state.iter_mut()) {
+            s.add_assign_number_with_coeff(v, E::Fr::one());
+            output.push(s.clone());
+        }
+    }
+
+    // Nonce
+    circuit_poseidon_round_function(cs, params, &mut state)?;
+    output.push(state[1].clone());
+
+    Ok(output.try_into().expect("array"))
 }
