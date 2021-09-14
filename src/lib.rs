@@ -19,3 +19,4 @@ pub use rescue::{params::RescueParams, rescue_hash};
 pub use rescue_prime::{params::RescuePrimeParams, rescue_prime_hash};
 pub use sponge::{generic_hash, generic_round_function, GenericSponge};
 pub use traits::{CustomGate, HashFamily, HashParams};
+pub use circuit::poseidon::circuit_poseidon_encrypt;

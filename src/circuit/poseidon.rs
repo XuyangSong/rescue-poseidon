@@ -136,7 +136,7 @@ pub(crate) fn circuit_poseidon_round_function<
     Ok(())
 }
 
-pub(crate) fn circuit_poseidon_encrypt<
+pub fn circuit_poseidon_encrypt<
     E: Engine,
     CS: ConstraintSystem<E>,
     P: HashParams<E, RATE, WIDTH>,
