@@ -149,7 +149,7 @@ pub fn circuit_poseidon_encrypt<
     input: &Vec<Num<E>>,
     secret: &Num<E>,
     nonce: &Num<E>,
-) -> Result<Vec<LinearCombination<E>>, SynthesisError> {
+) -> Result<Vec<Num<E>>, SynthesisError> {
     let domain_strategy = domain_strategy.unwrap_or(DomainStrategy::CustomFixedLength);
     match domain_strategy {
         DomainStrategy::CustomFixedLength | DomainStrategy::FixedLength => (),
@@ -191,13 +191,13 @@ pub fn circuit_poseidon_encrypt<
         circuit_poseidon_round_function(cs, params, &mut state)?;
         for (v, s) in values.iter().zip(state.iter_mut()) {
             s.add_assign_number_with_coeff(v, E::Fr::one());
-            output.push(s.clone());
+            output.push(s.clone().into_num(cs)?);
         }
     }
 
     // Nonce
     circuit_poseidon_round_function(cs, params, &mut state)?;
-    output.push(state[1].clone());
+    output.push(state[1].clone().into_num(cs)?);
 
-    Ok(output.try_into().expect("array"))
+    Ok(output)
 }
